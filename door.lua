@@ -70,14 +70,14 @@ local function isPlayerInRangeOfDoor(player: Player, model: doorModel, maximumRa
 end
 
 local function isDoorModel(model: Model)
-	return
-		(model
-			and typeof(model) == "Instance"
-			and model:IsA("Model")
-			and model:FindFirstChild("Hitbox")
-			and model:FindFirstChild("Handle")
-			and model:FindFirstChild("Lock")
-			and model:FindFirstChild("Hinge"))
+	return 
+	model
+	and typeof(model) == "Instance"
+	and model:IsA("Model")
+	and model:FindFirstChild("Hitbox")
+	and model:FindFirstChild("Handle")
+	and model:FindFirstChild("Lock")
+	and model:FindFirstChild("Hinge"))
 end
 
 local function initializeNetwork()
@@ -127,14 +127,19 @@ local function initializeNetwork()
 end
 
 local function setupClientInput(self: door)
+	self.activateClickDetector = Instance.new("ClickDetector")
+	self.lockClickDetector = Instance.new("ClickDetector")
 	self.activateClickDetector.MaxActivationDistance = self.activationRange
+	self.lockClickDetector.MaxActivationDistance = self.activationRange
+
 	self.activateClickDetector.MouseClick:Connect(function()
 		self:toggle(localPlayer)
 	end)
-	self.lockClickDetector.MaxActivationDistance = self.activationRange
+	
 	self.lockClickDetector.MouseClick:Connect(function()
 		self:lock(localPlayer)
 	end)
+
 	self.activateClickDetector.Parent = self.model.Handle
 	self.lockClickDetector.Parent = self.model.Lock
 end
@@ -221,8 +226,8 @@ function door.new(model: Model)
 	self.openAngle1 = assignAttributeToObject(self, model, "openAngle1", "number")
 	self.openAngle2 = assignAttributeToObject(self, model, "openAngle2", "number")
 	if isServer then
-		model:SetAttribute("opened", false)
-		model:SetAttribute("locked", false)
+		model:SetAttribute("opened", self.opened)
+		model:SetAttribute("locked", self.locked)
 		initializeDoorModel(self.model)
 	else
 		self.lockClickDetector = Instance.new("ClickDetector")
