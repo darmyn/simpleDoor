@@ -9,12 +9,12 @@ local replicateDoorActivated: RemoteEvent
 local replicateDoorLocked: RemoteEvent
 local localPlayer = players.LocalPlayer
 
-local function assignAttributeToObject(object, instance: Instance, attributeName: string, expectedType: string)
+local function assignAttributeToObject(instance: Instance, attributeName: string, expectedType: string)
 	local attributeValue = instance:GetAttribute(attributeName)
 	if attributeValue then
 		local attributeValueType = typeof(attributeValue)
 		if attributeValueType == expectedType then
-			object[attributeName] = attributeValue
+			return attributeValue
 		end
 	end
 end
@@ -22,9 +22,9 @@ end
 local activeDoors = {} :: {[Model]: door}
 local door = {}
 door.activationRange = 20
-door.defaultAngle = 0
-door.openAngle1 = 140
-door.openAngle2 = 140
+door.closedAngle = 0
+door.openAngle1 = 90
+door.openAngle2 = 90
 door.locked = false
 door.__index = door
 
@@ -38,9 +38,6 @@ local function initializeDoorModel(model: doorModel)
 				weldConstraint.Part0 = modelComponent
 				weldConstraint.Part1 = hinge
 				weldConstraint.Parent = modelComponent
-				if modelComponent == hitbox then
-					modelComponent.CanCollide = true
-				end
 				modelComponent.Anchored = false
 			end
 		end
@@ -61,7 +58,7 @@ local function isPlayerInRangeOfDoor(player: Player, model: doorModel, maximumRa
 		local humanoid: Humanoid = character:FindFirstChild("Humanoid")
 		if humanoid and humanoid.Health > 0 then
 			local rootPart = humanoid.RootPart
-			if (rootPart.Position - model.Hitbox.Position).Magnitude <= maximumRange then
+			if (rootPart.Position - model.Handle.Position).Magnitude <= maximumRange then
 				return true
 			end
 		end
@@ -70,12 +67,12 @@ end
 
 local function isDoorModel(model: Model)
 	return 
-	model
-	and typeof(model) == "Instance"
-	and model:IsA("Model")
-	and model:FindFirstChild("Handle")
-	and model:FindFirstChild("Lock")
-	and model:FindFirstChild("Hinge")
+		model
+		and typeof(model) == "Instance"
+		and model:IsA("Model")
+		and model:FindFirstChild("Handle")
+		and model:FindFirstChild("Lock")
+		and model:FindFirstChild("Hinge")
 end
 
 local function initializeNetwork()
@@ -125,15 +122,13 @@ local function initializeNetwork()
 end
 
 local function setupClientInput(self: door)
-	self.activateClickDetector = Instance.new("ClickDetector")
-	self.lockClickDetector = Instance.new("ClickDetector")
 	self.activateClickDetector.MaxActivationDistance = self.activationRange
 	self.lockClickDetector.MaxActivationDistance = self.activationRange
 
 	self.activateClickDetector.MouseClick:Connect(function()
 		self:toggle(localPlayer)
 	end)
-	
+
 	self.lockClickDetector.MouseClick:Connect(function()
 		self:lock(localPlayer)
 	end)
@@ -202,7 +197,7 @@ end
 local function close(self: door, playerWhoClosed: Player, replicating: boolean)
 	playAndReplicateDoorAnim(
 		self, 
-		self.defaultCF * CFrame.Angles(0, self.defaultAngle, 0), 
+		self.defaultCF * CFrame.Angles(0, self.closedAngle, 0), 
 		playerWhoClosed, 
 		replicating
 	)
@@ -216,13 +211,13 @@ function door.new(model: Model)
 	local self = setmetatable({}, door)
 	self.model = model :: doorModel
 	self.transitioning = false
-	self.opened = false
 	self.defaultCF = self.model.Hinge.CFrame
-	self.locked = assignAttributeToObject(self, model, "locked", "boolean")
-	self.activationRange = assignAttributeToObject(self, model, "activationRange", "number")
-	self.defaultAngle = assignAttributeToObject(self, model, "defaultAngle", "number")
-	self.openAngle1 = assignAttributeToObject(self, model, "openAngle1", "number")
-	self.openAngle2 = assignAttributeToObject(self, model, "openAngle2", "number")
+	self.opened = assignAttributeToObject(model, "opened", "boolean")
+	self.locked = assignAttributeToObject(model, "locked", "boolean")
+	self.activationRange = assignAttributeToObject(model, "activationRange", "number")
+	self.closedAngle = assignAttributeToObject(model, "closedAngle", "number")
+	self.openAngle1 = assignAttributeToObject(model, "openAngle1", "number")
+	self.openAngle2 = assignAttributeToObject(model, "openAngle2", "number")
 	if isServer then
 		model:SetAttribute("opened", self.opened)
 		model:SetAttribute("locked", self.locked)
@@ -232,7 +227,7 @@ function door.new(model: Model)
 		self.activateClickDetector = Instance.new("ClickDetector")
 		setupClientInput(self)
 	end
-
+	print(self)
 	activeDoors[self.model] = self
 	return self
 end
@@ -256,7 +251,7 @@ function door.toggle(self: door, playerWhoToggled: Player, replicating: boolean)
 end
 
 function door.lock(self: door, playerWhoToggled: Player, replicating: boolean)
-	if isPlayerInRangeOfDoor(playerWhoToggled, self.model, self.activationRange) then
+	if isPlayerInRangeOfDoor(playerWhoToggled, self.model, self.activationRange) and not self.opened then
 		self.locked = not self.locked
 		if isServer then
 			self.model:SetAttribute("locked", self.locked)
