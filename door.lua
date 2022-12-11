@@ -214,9 +214,9 @@ function door.new(model: Model)
 	self.model = model :: doorModel
 	self.transitioning = false
 	self.opened = false
+	self.defaultCF = self.model.Hinge.CFrame
 	self.locked = assignAttributeToObject(self, model, "locked", "boolean")
 	self.activationRange = assignAttributeToObject(self, model, "activationRange", "number")
-	self.defaultCF = self.model.Hinge.CFrame
 	self.defaultAngle = assignAttributeToObject(self, model, "defaultAngle", "number")
 	self.openAngle1 = assignAttributeToObject(self, model, "openAngle1", "number")
 	self.openAngle2 = assignAttributeToObject(self, model, "openAngle2", "number")
