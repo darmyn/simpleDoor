@@ -30,7 +30,6 @@ door.__index = door
 
 local function initializeDoorModel(model: doorModel)
 	local hinge = model.Hinge
-	local hitbox = model.Hitbox
 	hinge.Anchored = true
 	for _, modelComponent: BasePart in pairs(model:GetDescendants()) do
 		if modelComponent:IsA("BasePart") then
@@ -74,10 +73,9 @@ local function isDoorModel(model: Model)
 	model
 	and typeof(model) == "Instance"
 	and model:IsA("Model")
-	and model:FindFirstChild("Hitbox")
 	and model:FindFirstChild("Handle")
 	and model:FindFirstChild("Lock")
-	and model:FindFirstChild("Hinge"))
+	and model:FindFirstChild("Hinge")
 end
 
 local function initializeNetwork()
