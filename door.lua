@@ -233,7 +233,7 @@ function door.new(model: Model)
 end
 
 function door.toggle(self: door, playerWhoToggled: Player, replicating: boolean)
-	if not self.locked and isPlayerInRangeOfDoor(playerWhoToggled, self.model, self.activationRange) then
+	if not self.model:GetAttribute("locked") and isPlayerInRangeOfDoor(playerWhoToggled, self.model, self.activationRange) then
 		if isServer then
 			self.opened = not self.opened
 			self.model:SetAttribute("opened", self.opened)
@@ -252,9 +252,8 @@ end
 
 function door.lock(self: door, playerWhoToggled: Player, replicating: boolean)
 	if isPlayerInRangeOfDoor(playerWhoToggled, self.model, self.activationRange) and not self.opened then
-		self.locked = not self.locked
+		self.model:SetAttribute("locked", not self.model:GetAttribute("Locked"))
 		if isServer then
-			self.model:SetAttribute("locked", self.locked)
 			replicateToAllExcept(replicateDoorLocked, playerWhoToggled, self.model)
 			return true
 		elseif not replicating then
